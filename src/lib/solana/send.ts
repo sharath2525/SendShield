@@ -42,7 +42,7 @@ export async function sendGuardedTransfer(options: {
     if (balance < amount + fee + rent + FEE_RESERVE) throw new Error(`Insufficient Devnet balance. Leave ${formatSol(fee + rent + FEE_RESERVE)} SOL for fee, rent and reserve.`);
     if (!inspection.exists && amount < rent) throw new Error(`An unfunded recipient needs at least ${formatSol(rent)} SOL to remain rent-exempt.`);
     if (!options.stillCurrent()) throw new Error('Payment details changed. Review again.');
-    update({ status: 'awaiting_wallet', lastValidBlockHeight: String(lifetime.lastValidBlockHeight), fee: String(fee), message: 'Approve the exact Devnet transfer in your wallet.' });
+    update({ status: 'awaiting_wallet', lastValidBlockHeight: String(lifetime.lastValidBlockHeight), fee: String(fee), estimatedFee: String(fee), message: 'Approve the exact Devnet transfer in your wallet.' });
     walletInvoked = true;
     const [transaction] = await signer.modifyAndSignTransactions([unsigned]);
     if (!transaction) throw new Error('Wallet returned no transaction. Check wallet history before retrying.');
@@ -51,6 +51,7 @@ export async function sendGuardedTransfer(options: {
     update({ transactionSignature: getSignatureFromTransaction(transaction), status: 'confirming', message: 'Wallet returned signed bytes. Checking reviewed intent before app broadcast.' });
     try { assertReviewedMessage(unsigned, transaction); }
     catch (error) { messageMismatch = true; throw error; }
+    attempt = { ...attempt, walletMessageVerifiedAt: new Date().toISOString() };
     if (!options.stillCurrent()) throw new Error('Payment details changed while the wallet was open. App broadcast stopped; check the recorded signature.');
     // Signing may have taken minutes. Recheck the chain and exact destination again before broadcast.
     await assertCluster('devnet');

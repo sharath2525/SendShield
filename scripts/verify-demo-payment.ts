@@ -1,0 +1,12 @@
+import { signature } from '@solana/kit';
+import { assertCluster, rpcFor, rpcOptions } from '../src/lib/solana/rpc';
+import { verifyTransactionEvidence } from '../src/lib/solana/receipt';
+import type { TransferAttempt } from '../src/types';
+const transactionSignature = '2qNjF9VBhwb8vfe9X2Gbr78vV8ouzMkgdC8KAaaXXquJzKP79BmmXBCMwLmN5AbENhjpVS7xUPvW7upQPeN2uU8K';
+await assertCluster('devnet');
+const rpc = rpcFor('devnet'); const sig = signature(transactionSignature);
+const { value: [status] } = await rpc.getSignatureStatuses([sig], { searchTransactionHistory: true }).send(rpcOptions());
+if (!status || status.err || !['confirmed','finalized'].includes(status.confirmationStatus ?? '')) throw new Error('Settlement not confirmed');
+const tx = await rpc.getTransaction(sig, { encoding: 'jsonParsed', commitment: 'confirmed', maxSupportedTransactionVersion: 0 }).send(rpcOptions());
+const attempt: TransferAttempt = { id: 'owner-provided-demo-evidence', walletAddress: '2Mkgp89nuhWf7PLZDCwc9H3FGsyNmBnsKR1e43mZHjF2', recipientAddress: '5qnGNxRAhCn3DLP76KVmDCfv1KjRs1iNURZ4YpK2jE6a', lamports: '1000000', cluster: 'devnet', status: 'submitted', transactionSignature, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+console.log(JSON.stringify({ checkedAt: new Date().toISOString(), commitment: status.confirmationStatus, ...verifyTransactionEvidence(tx, attempt), amountLamports: attempt.lamports, transactionSignature, applicationReceiptVerifierPassed: true }));

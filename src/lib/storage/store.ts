@@ -10,6 +10,7 @@ export const attemptSchema = z.object({ id: z.string().min(1), walletAddress: z.
   transactionSignature: z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{64,88}$/).optional(), lastValidBlockHeight: z.string().regex(/^\d+$/).optional(),
   createdAt: z.iso.datetime(), updatedAt: z.iso.datetime(), errorCode: z.string().max(200).optional(), message: z.string().max(1000).optional(),
   slot: z.string().regex(/^\d+$/).optional(), fee: z.string().regex(/^\d+$/).optional(),
+  estimatedFee: z.string().regex(/^\d+$/).optional(), walletMessageVerifiedAt: z.iso.datetime().optional(),
 });
 export const STORAGE_KEY = 'sendshield:v1';
 const schema = z.object({ version: z.literal(1), contacts: z.array(contactSchema).max(500), attempts: z.array(attemptSchema).max(200) });

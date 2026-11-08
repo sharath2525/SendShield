@@ -1,8 +1,10 @@
 import { chromium } from 'playwright';
 import { mkdir } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
+if (!process.argv[2]) throw new Error('Usage: node scripts/inspect-recording.mjs <local-video-path>');
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-await page.goto('file:///C:/Users/donth/AppData/Local/Packages/Microsoft.ScreenSketch_8wekyb3d8bbwe/TempState/Recordings/20261108-1513-56.1058267.mp4');
+await page.goto(pathToFileURL(process.argv[2]).href);
 await page.waitForFunction(() => document.querySelector('video')?.readyState >= 2);
 const duration = await page.locator('video').evaluate(v => v.duration);
 console.log({ duration });

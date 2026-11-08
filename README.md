@@ -1,83 +1,104 @@
-# SendShield — Verify before you send
+# SendShield — From recipient evidence to payment proof
 
-SendShield inspects the actual Solana recipient before a native SOL payment, compares the full address against locally saved contacts, and independently checks the resulting transaction receipt.
+**A Solana payment can succeed on chain and still go to the wrong destination. SendShield helps you inspect the recipient, review the exact payment, and verify what actually settled.**
 
-Built for **MLH Solana Hackathon, November 6–8, 2026**, DeFi/payments. This is an unaudited Devnet prototype, not a universal scam detector.
+Built for the **MLH Solana Hackathon, November 6–8, 2026**, DeFi/payments track.
 
-- Public app: https://send-shield-solana.vercel.app/app
-- Source: https://github.com/sharath2525/SendShield
-- Release evidence: [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)
-- Payment investigation: [PAYMENT_INVESTIGATION.md](PAYMENT_INVESTIGATION.md)
+[Live app](https://send-shield-solana.vercel.app/app) · [Source](https://github.com/sharath2525/SendShield) · [Two-minute demo script](DEMO_SCRIPT.md) · [Verified real payment](VERIFIED_PAYMENT.md) · [Release evidence](RELEASE_CHECKLIST.md)
 
-## Features
+## The problem
 
-- Real RPC account inspection, strict canonical public keys, SDK curve checks, and cluster-genesis verification.
-- Native SOL eligibility restricted to ordinary on-curve System Program wallets with empty account data, or on-curve unfunded addresses.
-- Explicit rejection of token mints/accounts, programs, unsupported layouts and off-curve recipients. RPC failure blocks sending.
-- Same-network contact comparisons with full-address differences. Conflicting lookalikes block payment. Contacts are user assertions, not identity proofs.
-- Wallet Standard connection and sign-only authorization; Devnet payments capped at 0.1 SOL with exact integer lamports.
-- Explicit 20,000-unit compute limit and zero priority-fee policy. Fee estimation uses the built message. Unexpected wallet changes remain rejected.
-- Browser-local activity, signature persistence before broadcast, single-send locking and receipt rechecks.
-- Five responsive routes: `/`, `/app`, `/contacts`, `/activity`, `/learn`. The lookalike teaching example is permanently marked simulated.
+A Solana address is not necessarily a normal wallet. It can identify a token mint, token account, executable program, or another account type. Pasting a syntactically valid address is therefore not enough for a deliberate native SOL payment. Users can also mistake an address with familiar first and last characters for a saved recipient, or interpret a wallet popup or network timeout as proof of payment success or failure.
 
-## Verification status
+SendShield is for people making their first Solana payments and teams demonstrating safer payment workflows. It makes the evidence visible before approval and keeps uncertain outcomes recoverable afterward.
 
-The initial Phantom issue was reproduced visually from the user's recording. Phantom's documented automatic priority-fee injection explains why the original unsigned, budget-free message could differ after signing. The local correction predefines the fee policy rather than accepting arbitrary wallet instructions.
+## What makes it special
 
-The corrected transaction passed a genuine **read-only Devnet simulation** with 450 compute units and no error (slot 520064799). Simulation is **not settlement**. The user reported no transaction in Phantom history for the original failed attempt. A real Phantom retest is still required. Do not claim the production deployment includes local patches until the deployed commit is verified.
+The contribution is a connected **recipient → intent → authorization → settlement** workflow. These individual techniques are not inventions, and wallet warnings and Solana Pay already exist. SendShield brings them into one inspectable, conservative native-SOL experience:
+
+| Question | Evidence SendShield provides | What it does not prove |
+|---|---|---|
+| Is this an eligible native-SOL destination? | Live RPC owner, layout, curve, executable status and cluster genesis | The recipient's identity or honesty |
+| Does it resemble a saved contact? | Full-address comparison and highlighted differences; conflicting lookalikes block sending | That every lookalike is malicious or every attack is detected |
+| Can someone control this wallet key? | Domain-separated Ed25519 message proof, exact address match and ten-minute expiry | Legal identity, current exclusive control, or one-time use |
+| What am I being asked to pay? | Strict Devnet SOL request parsing, full destination and exact integer amount | Authenticated invoice ownership; request links are unsigned |
+| Did the payment actually match? | Three-layer receipt: intent, observed signed-message policy, and independently fetched transaction | A wallet-screen attestation or protection from a dishonest RPC |
+
+No custody, seed phrases, runtime AI, opaque safety score, platform fee, or automatic payment. The UI calls unknown outcomes **unknown**, records a signature before broadcast, and directs users to recheck instead of blindly retrying.
+
+## Implemented features
+
+- Live Solana RPC inspection, canonical address parsing and cluster-genesis checks. Mainnet inspection is read-only.
+- Native SOL eligibility limited to ordinary on-curve System Program wallets with empty data, or on-curve unfunded addresses. Mint/token/program/off-curve/unsupported recipients are blocked. RPC failures fail closed.
+- Browser-local contacts, address differences, lookalike conflict blocking, and an explicitly labelled simulated teaching example.
+- Wallet Standard connection and sign-only version-0 transactions. Devnet transfers are capped at 0.1 SOL with exact integer lamports, fresh recipient checks and cross-tab send locking.
+- Explicit 20,000-unit compute limit and zero priority fee. Unexpected wallet message changes remain rejected; actual fees are estimated before signing.
+- `/prove`: create and cryptographically verify an off-chain wallet-control proof. Domain, version, network, wallet, purpose, random nonce and timestamps are signed. Unsupported message-signing wallets do not disable ordinary payments.
+- `/request`: locally generate and parse shareable Devnet SOL links. Data is carried in the URL fragment. Unsupported networks/assets, external transaction URLs, duplicate fields and invalid amounts are rejected. Imports must use the ordinary inspect/review/approve flow.
+- Three-layer receipts, local recovery, live RPC rechecks, Explorer links and public JSON export. Older receipts explicitly disclose missing authorization metadata.
+- Routes: `/`, `/app`, `/contacts`, `/activity`, `/learn`, `/prove`, `/request`.
+
+## Actual blockchain evidence
+
+A genuine owner-approved Phantom payment was independently verified **finalized** on Devnet: **0.001 SOL**, **5,000 lamports fee**, slot **520065222**, exact expected sender and recipient, with no on-chain error. The application's receipt verifier also accepted that live transaction. [Evidence and reproducible verification](VERIFIED_PAYMENT.md).
+
+The earlier Phantom mismatch was addressed by constructing the explicit zero-priority-fee compute policy before wallet signing. Phantom documents automatic priority-fee instruction injection for budget-free messages. We retained strict message validation rather than accepting arbitrary wallet changes.
+
+This validates one real Phantom/local workflow. It is not a claim that every wallet or the current production deployment passed. See the release checklist for deployment and new message-signing test status.
 
 ## Quick start
 
-Use Node 22.12+ and npm:
+Use Node 22.12+:
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:3000/app. Default public endpoints work without credentials. Optionally copy `.env.example` to `.env.local` and set public RPC URLs, then restart. `NEXT_PUBLIC_*` values are public browser configuration: never put secret provider keys there. No database or backend signer is required.
+Open http://127.0.0.1:3000/app. Public endpoints work without credentials. Optional public RPC configuration is documented in `.env.example`. `NEXT_PUBLIC_*` values are visible to every browser: never include confidential keys. No database or backend signer is required.
 
-## Genuine Devnet test
+## Try it
 
-1. Open the app in a browser with a Devnet-compatible Wallet Standard wallet supporting `solana:signTransaction` and version-0 messages. Enable Devnet in the wallet.
-2. Fund a test sender at https://faucet.solana.com/. Use a second wallet you control as recipient; independently copy its full address.
-3. Connect, enter 0.001 SOL and the recipient, inspect, then review the full address, amount, network and zero priority-fee policy.
-4. Approve exactly once in your wallet. Wait for a receipt. Open its Devnet Explorer link and compare sender, recipient, amount and fee.
-5. If the result is unknown, check Activity and the existing signature. Never retry blindly. A signed response or simulation is not confirmation.
+1. **Reject a real wrong account type:** on Verify & send, load the wrapped SOL mint and inspect its actual RPC evidence.
+2. **Explain lookalikes:** open Safety guide and run the permanently labelled simulated comparison.
+3. **Prove key control:** connect a recipient wallet at `/prove`, sign the plain message, and share the proof through an independently trusted channel. A sender pastes the proof and the expected full address to verify it.
+4. **Request a payment:** create a Devnet request at `/request`. Open the link, load it for review, continue to Verify & send, load the request, and inspect. A label is unverified text, never identity evidence.
+5. **Make a genuine transfer:** connect a funded Devnet sender, use a second test wallet you control, inspect, review 0.001 SOL, and approve once. Compare the actual receipt with Explorer. For unknown outcomes, recheck the saved signature before considering another payment.
 
-No private keys or seed phrases belong in this app or repository. Do not send real mainnet assets; mainnet inspection is read-only.
+Get test SOL from [Solana's faucet](https://faucet.solana.com/). Never use a private key or seed phrase in SendShield.
 
-## Architecture and safety model
+## Architecture
 
-Next.js App Router / React / TypeScript → pure address, amount and comparison policies → Solana Kit RPC → Wallet Standard sign-only capability → message-policy validation → one app-controlled broadcast → signature status and parsed transaction verification.
+Next.js App Router / React / TypeScript → strict address, amount, proof and request policies → Solana Kit RPC → Wallet Standard signing → signed-message policy validation → single app-controlled broadcast → status and parsed transaction verification.
 
-Key modules: `src/lib/security`, `src/lib/solana`, `src/lib/storage`, `src/components`, `src/app`. Zod validates persisted data and receipt evidence. Solana Kit handles public-key parsing, curve checks, transaction encoding and wallet integration; System and Compute Budget instructions use official generated libraries. UI uses Tailwind CSS and Lucide. Vitest and Playwright provide regression coverage.
+Official System and Compute Budget instruction libraries build the transaction. Solana Kit and Web Crypto perform Ed25519 verification. Zod validates local storage and external input. Tailwind CSS and Lucide provide the UI; Vitest and Playwright provide regression tests. There is no custom on-chain program: this prototype operates on existing Solana accounts and native transfers.
 
-The threat model covers mistaken account types, heuristic lookalikes, stale review state, malformed local data, uncertain RPC responses and duplicate payment interactions. It does not cover a compromised browser/wallet, dishonest RPC operator, stolen recipient keys or social engineering that defeats independent identity verification. Full account type eligibility is not proof of identity or key control. No signed recipient-control proof is implemented yet.
+## Limits and threat model
 
-Storage is local, versioned, and schema validated. Denied storage falls back to visible in-memory mode; closing that tab can lose pending history. Web Locks coordinate sends across supported browser tabs. Clearing browser storage removes contacts and recovery records. No cloud synchronization or general wallet-history indexing exists.
+This is an **unaudited Devnet prototype**, not a universal scam detector or a mainnet-ready payment service. A compromised browser/wallet, stolen recipient key, dishonest RPC or successful social engineering remains outside its protection.
 
-## Checks and deployment
+Offline proofs are reusable until expiry. A nonce distinguishes challenges; it does not enforce one-time use without durable server state. They are not bound to a specific invoice or requester. Requests are unsigned, and editing a valid address or amount cannot be detected cryptographically: full independent review is required. JSON receipts are unsigned public summaries, not independently authenticated certificates.
+
+Contacts and history are browser-local, schema validated and not encrypted. Clearing storage removes recovery records; blocked storage falls back to visibly disclosed in-memory mode. Stored confirmations require fresh RPC checks after reload. Web Locks require a supported modern browser. Proof signing requires `solana:signMessage`; payments require sign-only version-0 support. No USDC, QR generation, identity registry, cloud sync, or automatic refund is implemented.
+
+## Checks and Vercel deployment
 
 ```sh
 npm run typecheck
 npm run lint
 npm test
 npm run build
-npx playwright install chromium
 npm run test:e2e
 npm run test:live
-npx tsx scripts/simulate-payment.ts
+npx tsx scripts/verify-demo-payment.ts
 ```
 
-The last script performs unsigned simulation only. Unit mocks and ephemeral test signers are confined to tests; they never substitute for live app RPC.
+The last command reads the real recorded payment; it never broadcasts. Test fixtures and ephemeral signers are confined to tests and never substitute for live data.
 
-Vercel: import this repository with root `.`; select Next.js, Node 22 or a compatible newer runtime, install `npm ci`, build `npm run build`, and default framework output. Use the existing production project/domain. Public environment changes require rebuilding. Verify all routes and a genuine wallet transfer on the deployed commit before release. Do not force-push history.
+Vercel: use this repository's root, Next.js framework, Node 22 or compatible newer runtime, `npm ci`, `npm run build`, and default output. Public RPC environment changes require a rebuild. Verify the deployed commit and real wallet behavior before calling it production-ready. Exact results and unresolved gates are in [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md).
 
-Known dependency audit: installation reports eight moderate development-tool dependency advisories; production runtime exposure was not established by that install output. Do not blindly run a breaking `npm audit fix --force` before submission.
+## Attribution
 
-## Attribution and AI disclosure
+Created for this project with OpenAI Codex development assistance. No runtime AI API is used; AI assistance alone is not an AI-track feature. Public dependencies retain their licenses. A project-source license has not been selected by the owner.
 
-Application source was created in this project during the hackathon with OpenAI Codex assistance. No runtime AI API is used, and the project does not claim the AI prize merely because AI helped write code. Public libraries retain their respective licenses; no prior personal project source was reused in the initial build. A project-source license has not yet been selected by the owner.
-
-Primary references: [Solana Next.js + Kit](https://solana.com/docs/frontend/nextjs-solana), [recipient verification](https://solana.com/docs/payments/send-payments/verify-address), [Phantom priority fee behavior](https://github.com/phantom/docs/blob/master/development-powertools/solana-priority-fees.md). Product assessment and competitors are documented in [PRODUCT_REVIEW.md](PRODUCT_REVIEW.md).
+References: [Solana recipient verification](https://solana.com/docs/payments/send-payments/verify-address), [Solana Kit frontend](https://solana.com/docs/frontend/nextjs-solana), [Phantom priority-fee behavior](https://github.com/phantom/docs/blob/master/development-powertools/solana-priority-fees.md). See [PRODUCT_REVIEW.md](PRODUCT_REVIEW.md) for competitor analysis and candid tradeoffs.

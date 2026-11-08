@@ -20,5 +20,6 @@ export type TransferStatus = 'draft' | 'blocked' | 'awaiting_wallet' | 'submitte
 export interface TransferAttempt extends TransferDraft {
   id: string; status: TransferStatus; transactionSignature?: string; lastValidBlockHeight?: string;
   createdAt: string; updatedAt: string; errorCode?: string; message?: string; slot?: string; fee?: string;
+  estimatedFee?: string; walletMessageVerifiedAt?: string;
 }
 export interface Receipt extends TransferAttempt { status: 'confirmed'; transactionSignature: string; slot: string; }

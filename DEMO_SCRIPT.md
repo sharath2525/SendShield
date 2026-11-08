@@ -1,28 +1,66 @@
-# SendShield two-minute demo
+# SendShield: two-minute demo script
 
-This is a recording script, not a record of a completed transfer. Record during the event and keep the finished public video at or below 2:00. Rehearse once; retain the genuine wallet approval and actual receipt. Never substitute a mocked confirmation when RPC is slow.
+Read this at a natural pace. Target 1:50–1:58. The strongest story is **a successful transaction is not necessarily the intended payment**. Demonstrate evidence, not promises of total safety.
 
-## Preparation
+## Before recording
 
-- Open the deployed app, a Devnet-compatible wallet, and Solana Explorer on Devnet. Fund the sender through the official [Solana faucet](https://faucet.solana.com/).
-- Independently copy the full recipient address from a second test wallet you control. Save it as a Devnet contact. Do not reuse the sender as the recipient.
-- Have the real wrapped SOL mint `So11111111111111111111111111111111111111112` ready. Inspect it live on the selected network; use the resulting actual account evidence rather than assuming its state.
-- Prepare a visibly labelled **SIMULATED LOOKALIKE EXAMPLE — NO REAL ON-CHAIN ATTACK DETECTED** using the app's comparison demonstration. Do not suggest this is a discovered attacker or an address controlled by the recipient.
-- Set a 0.001 SOL amount and confirm sufficient Devnet balance, including fees. Hide unrelated wallet balances, account names, browser notifications and private information.
+Open the tested app, `/learn`, `/prove`, and the genuine Devnet Explorer receipt. Connect a funded Devnet test wallet; hide unrelated account names, balances, notifications and bookmarks. Use a second wallet you control. Rehearse the clicks once. New proofs expire after ten minutes, so create one shortly before recording.
 
-## Storyboard and narration
+## Say this, while showing the screen
 
-| Time | Screen/action | Spoken words |
-|---|---|---|
-| 0–12s | Landing, then launch app | “MLH Solana Hackathon, November 6–8, 2026. This is SendShield. A copied address can look familiar and still be the wrong destination for your SOL.” |
-| 12–35s | Paste the real mint; click Inspect; show RPC owner, account type, slot and block | “This is a real token mint. We inspect its owner and data on Solana Devnet. A normal SOL transfer can reach the wrong account type. SendShield blocks this destination and shows the evidence.” |
-| 35–60s | Show labelled simulated comparison and complete addresses | “This comparison is simulated; we have not detected a real attack. These addresses share their edges but differ in the middle. SendShield compares every same-network saved contact and blocks this conflict. A saved name is not proof of identity.” |
-| 60–95s | Restore genuine recipient, inspect, review 0.001 SOL, checkbox, wallet approval; wait for receipt | “Now I use a second test wallet I control. The account type is eligible, but I must still verify who controls it. I review the full address and exact amount. The app rechecks before my wallet signs this real Devnet transfer.” |
-| 95–112s | Open actual receipt's Explorer link, show recipient and amount | “This receipt appears only after checking the actual transaction, destination, amount and successful execution. Here is the matching Devnet signature in Solana Explorer.” |
-| 112–120s | End on product and scope note | “Built from scratch this weekend with Codex assistance. No custom contract, mainnet sending, or promise that every eligible address is trustworthy.” |
+**0:00–0:12 — landing / app**
 
-## Recording contingencies
+“Hi, I'm Sharath. I built SendShield for the MLH Solana Hackathon. A transaction can succeed and still send SOL to the wrong destination. SendShield checks the recipient before approval and the result afterward.”
 
-If confirmation is slower than the slot in the script, use a clearly labelled time cut after the actual wallet approval. Keep the real resulting signature and Explorer evidence consistent. If the transfer fails, resolve the actual issue and record again; never display a successful receipt from another payment as though it were this one. If no real transfer can be completed, state that limitation in the submission and show the honest failure state.
+**0:12–0:32 — Load wrapped SOL mint → Inspect → show live evidence**
 
-Use “Built from scratch this weekend” only when accurate for the final submitted source and event rules. Fill in public deployment, repository and video URLs in `SUBMISSION.md` after publication. Review the video in a signed-out browser to verify public access and its duration before submitting.
+“This is a real token mint, not an ordinary wallet. SendShield reads its owner and account data from Solana Devnet and blocks this native-SOL payment. It shows the reason and RPC evidence instead of a vague safety score.”
+
+**0:32–0:45 — Safety guide → Compare simulated addresses**
+
+“This example is explicitly simulated. The address edges look familiar, but the middle differs. SendShield highlights those differences and blocks conflicting saved-contact lookalikes.”
+
+**0:45–1:00 — proof page, actual verified message proof**
+
+“A recipient can also sign a message proving control of their wallet key. We verify its exact address, domain, signature and expiry. That proves key control—not the person's identity. The offline proof is reusable until it expires.”
+
+**1:00–1:12 — request page, generated link / full address and amount**
+
+“A Devnet request carries the full recipient and exact amount. The link is unsigned, so it still goes through inspection, contact comparison and manual review. Nothing pays automatically.”
+
+**1:12–1:38 — actual recipient inspection → Review → real wallet approval**
+
+“Now I review a real 0.001 SOL transfer to my second test wallet. The priority fee is zero, and the wallet must approve. SendShield checks the returned transaction against the reviewed intent and records its signature before broadcasting.”
+
+**1:38–1:53 — resulting receipt and matching Explorer transaction**
+
+“The receipt separates what I reviewed, what the application observed from the wallet, and what actually settled on chain. Here are the matching recipient, amount and signature in Solana Explorer. A timeout never becomes fake success.”
+
+**1:53–2:00 — end card**
+
+“SendShield: recipient evidence to payment proof. Non-custodial, Devnet-only, built with Solana Kit and Codex assistance.”
+
+## If you need a shorter take
+
+Cut the request-link section first. Keep the real mint rejection, genuine transfer evidence and honest limitations. Do not promise to win or say “100% safe.”
+
+## Honest editing rules
+
+- If confirmation takes time, cut the waiting interval and label it “confirmation wait shortened.” Keep the approval and resulting signature consistent.
+- You may show the previously verified payment, but say **“This is our earlier successful Devnet test”**. Do not present its receipt as the result of a new approval.
+- If real wallet message signing has not passed, omit the proof success scene. Do not substitute a fixture for a real proof.
+- If the deployed version is not verified, demonstrate the tested local app and disclose that; do not imply it is the public build.
+- Never show a seed phrase/private key. Test SOL addresses and public signatures are sufficient.
+
+## Upload
+
+Title: **SendShield — Recipient Evidence to Payment Proof | MLH Solana Hackathon 2026**
+
+Description: SendShield inspects real Solana account types, compares full recipient addresses, verifies wallet-control messages, and reconciles intended Devnet transfers with actual chain evidence. Key control is not identity; payment links are unsigned; this is an unaudited Devnet prototype. Built with Solana Kit, Wallet Standard, Next.js and Codex assistance.
+
+App: https://send-shield-solana.vercel.app/app
+Source: https://github.com/sharath2525/SendShield
+
+Tags: Solana, MLH, DeFi, WalletStandard, SendShield.
+
+Upload to YouTube (public or unlisted), Vimeo or Loom; check it signed out and send the public URL for MLH submission. No local MP4 path can replace that URL.

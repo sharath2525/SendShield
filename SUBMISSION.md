@@ -1,44 +1,48 @@
-# SendShield
+# SendShield — MLH submission material
 
-**One-line pitch:** Verify Solana recipients, catch account-type mistakes and contact lookalikes, then confirm the exact Devnet payment on chain.
+**Pitch:** Inspect Solana recipients, prove wallet-key control, and reconcile reviewed Devnet payments with real on-chain evidence.
 
 **Event:** MLH Solana Hackathon, November 6–8, 2026.
-
-**Categories:** DeFi Track Top Prize and Top 3 Overall. Gaming and runtime AI are not implemented. Beginner eligibility has not been established.
+**Categories:** DeFi Track Top Prize and Top 3 Overall. No Gaming or runtime AI feature; Beginner eligibility is not established.
 
 ## Description
 
-Native SOL can be sent successfully to the wrong account type. Familiar-looking address edges also encourage users to trust a pasted destination without checking its full value. SendShield makes that decision explicit: inspect live Solana account ownership and layout, compare the entire destination with independently saved contacts, review one Devnet payment, and reconcile its actual chain result.
+A successful blockchain transaction can still be the wrong payment. A copied Solana address might be a token mint rather than an ordinary wallet; familiar address edges can conceal a contact mismatch; and a wallet response is not proof that the intended payment settled.
 
-We built a Next.js application with Wallet Standard connection, real Kit RPC inspection, strict address and amount parsing, a conservative native-SOL policy, contact comparison, guarded wallet signing and locally persisted receipt recovery. The live UI never substitutes mocked blockchain success. Its educational lookalike example is labelled simulated.
+SendShield makes payment evidence understandable. It inspects live account ownership and layout, compares full addresses against locally saved contacts, and requires explicit review and wallet approval for a capped Devnet SOL transfer. It validates the returned transaction against the reviewed message, records its signature before broadcasting, and checks actual transaction evidence before showing confirmation. Unknown results remain unknown and recoverable.
 
-Solana is essential: account ownership/type determines the recipient policy, wallet authorization signs the actual System Program transfer, and RPC transaction evidence determines confirmation. The app has no custody, custom contract, mainnet payment flow or runtime AI model.
+The application also creates and verifies domain-separated wallet-control messages with Ed25519 signatures and ten-minute expiry, generates strictly parsed Devnet payment-request links, and displays three layers of evidence: reviewed intent, locally observed wallet authorization, and confirmed chain result. Receipts can be exported as public JSON summaries.
 
-Current limitation: the local Phantom compatibility fix specifies compute-budget instructions and zero priority fee before signing, addressing documented wallet injection behavior. It has passed unsigned real Devnet simulation, but a genuine owner-approved retest and deployment verification remain required. Do not describe these as completed before adding evidence.
+Solana is essential: account ownership and data determine the recipient policy; Wallet Standard authorizes the native System Program transfer; and RPC evidence determines settlement. This is not a mock blockchain demo. An owner-approved Phantom transfer of 0.001 SOL was independently verified finalized at slot 520065222, with a 5,000-lamport fee and exact recipient/amount matching. The application verifier passed against that real transaction.
+
+We built the application in this project using Next.js, React, TypeScript, Solana Kit and Wallet Standard, with Codex development assistance. Automated coverage includes strict parsing, transaction mutation, uncertain settlement, local storage, proof tampering/expiry, request validation and responsive browser interactions. See RELEASE_CHECKLIST.md for the latest exact results and manual gates.
+
+Limits: this is an unaudited Devnet prototype. Key control is not real-world identity; offline proofs can be reused until expiry; request links are unsigned; receipt exports are unsigned summaries; contacts and history stay in the browser. No custody, mainnet sending, USDC flow, custom contract or runtime AI API is claimed. New wallet-message signing and deployed-wallet checks must be reported separately from automated cryptographic tests.
 
 ## Links
 
 - Source: https://github.com/sharath2525/SendShield
 - Live app: https://send-shield-solana.vercel.app/app
-- Public demo video: **OWNER MUST PROVIDE** (YouTube, Vimeo or Loom; at most two minutes).
-- Genuine verified transaction: **NOT YET RECORDED**.
+- Public demo video: **OWNER TO PROVIDE** — YouTube, Vimeo or Loom, maximum two minutes.
+- Real finalized Devnet payment: https://explorer.solana.com/tx/2qNjF9VBhwb8vfe9X2Gbr78vV8ouzMkgdC8KAaaXXquJzKP79BmmXBCMwLmN5AbENhjpVS7xUPvW7upQPeN2uU8K?cluster=devnet
+- Evidence: https://github.com/sharath2525/SendShield/blob/main/VERIFIED_PAYMENT.md
 
 ## Technologies
 
-Solana, Solana Kit, Wallet Standard, System Program, Compute Budget Program, Next.js, React, TypeScript, Tailwind CSS, Zod, Lucide, Vitest, Playwright, Vercel. OpenAI is development assistance, not a runtime application API.
+Solana, Solana Kit, Wallet Standard, System Program, Compute Budget Program, Next.js, React, TypeScript, Tailwind CSS, Zod, Lucide, Vitest, Playwright, Vercel, Web Crypto Ed25519. OpenAI Codex is development assistance, not a runtime API.
 
 ## Prize-category answers
 
-**DeFi Track Top Prize:** SendShield improves the native SOL payment workflow by rejecting incompatible recipients and conflicting contact lookalikes before signing. It uses Solana account inspection, explicit payment intent and independent transaction reconciliation to make payment outcomes understandable.
+**DeFi Track Top Prize:** SendShield improves native SOL payments through live destination inspection, contact-lookalike blocking, exact intent review and independent transaction reconciliation. Its recipient-control proofs, Devnet request links and three-layer receipts make the boundaries between key control, authorization and settlement visible without custody or invented safety guarantees.
 
-**Top 3 Overall:** SendShield turns a specific blockchain mistake into a clear inspect–compare–review–confirm experience. It combines genuine Solana integration, responsive design, conservative failure handling and automated regression coverage, with its remaining wallet-verification limits disclosed.
+**Top 3 Overall:** SendShield addresses a concrete, irreversible payment mistake through a usable evidence-based workflow. It combines genuine Solana integration and a verified real Phantom transfer with transparent failure recovery, responsive design, cryptographic proof validation and automated regression tests.
 
-## Video and publicity
+## Demo package
 
-YouTube title: **SendShield — Verify Before You Send | MLH Solana Hackathon 2026**
+Read DEMO_SCRIPT.md for the word-for-word two-minute narration, recording actions, title, description and tags. Strongest opening: **“A transaction can succeed and still be the wrong payment.”**
 
-Description: SendShield checks actual Solana destinations and compares saved contacts before a deliberate Devnet payment. Built with Solana Kit, Wallet Standard and Next.js. An account-type check does not prove identity. Source: https://github.com/sharath2525/SendShield — app: https://send-shield-solana.vercel.app/app. Codex assisted development. Only show a confirmed payment after a genuine successful transfer.
+Screenshots: actual live mint rejection; labelled simulated lookalike comparison; proof verifier (real success only after wallet test); full review; actual receipt with matching Explorer evidence. Do not use fake success or expose wallet secrets.
 
-Tags: Solana, MLH, DeFi, WalletStandard, SendShield.
+## Submission status
 
-Screenshot checklist: landing; real blocked mint with RPC evidence; labelled simulated address diff; review dialog without private data; genuine verified receipt only once available. Do not upload private wallet/account screenshots from the troubleshooting recording.
+The existing MLH project is being updated, not duplicated. A draft, registration or check-in is not a submission. Record the returned submission and prize-entry confirmations here once MLH accepts them. The owner says the participant survey was saved on MLH; API acceptance still needs verification. Public demo video URL remains outstanding.
