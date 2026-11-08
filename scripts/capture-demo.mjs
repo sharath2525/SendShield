@@ -1,0 +1,14 @@
+import { chromium } from 'playwright';
+import { mkdir } from 'node:fs/promises';
+const browser = await chromium.launch();
+const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+await mkdir('docs/screenshots', { recursive: true });
+await page.goto('https://send-shield-solana.vercel.app/', { waitUntil: 'networkidle' });
+await page.screenshot({ path: 'docs/screenshots/landing.png', fullPage: true });
+await page.goto('https://send-shield-solana.vercel.app/app', { waitUntil: 'networkidle' });
+await page.getByRole('button', { name: 'Load wrapped SOL mint' }).click();
+await page.getByRole('button', { name: 'Inspect address', exact: true }).click();
+await page.getByText('BLOCKED', { exact: true }).waitFor();
+await page.screenshot({ path: 'docs/screenshots/live-mint-rejection.png', fullPage: true });
+console.log('Captured actual production screens; mint checked using live RPC. No mocked data or connected wallet.');
+await browser.close();

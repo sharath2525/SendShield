@@ -29,3 +29,32 @@ test('proof page fails closed without wallet and rejects malformed proof', async
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(errors).toEqual([]);
 });
+
+test('empty request import gives an actionable instruction and generated link opens', async ({ page }) => {
+  await page.goto('/request');
+  await page.getByRole('button', { name:'Load request for review' }).click();
+  await expect(page.locator('main [role="alert"]')).toContainText('Paste the complete generated link first');
+  await page.getByLabel('Full recipient wallet').fill(key);
+  await page.getByRole('button', { name:'Create Devnet request link' }).click();
+  await page.getByRole('link', { name:'Open generated request' }).click();
+  await page.getByRole('button', { name:'Load request for review' }).click();
+  await expect(page.getByRole('heading', { name:'Request parsed — verification required' })).toBeVisible();
+});
+
+// Only the browser's saved history is seeded. Settlement is read from REAL Devnet RPC;
+// this is recovery of the owner's already recorded transaction, not a new payment.
+test('LIVE recovery rechecks an existing real payment without wallet signing', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('sendshield:v1', JSON.stringify({ version:1, contacts:[], attempts:[{
+    id:'recovery-existing-real-payment', status:'confirmed', cluster:'devnet', lamports:'1000000',
+    walletAddress:'2Mkgp89nuhWf7PLZDCwc9H3FGsyNmBnsKR1e43mZHjF2', recipientAddress:'5qnGNxRAhCn3DLP76KVmDCfv1KjRs1iNURZ4YpK2jE6a',
+    transactionSignature:'2qNjF9VBhwb8vfe9X2Gbr78vV8ouzMkgdC8KAaaXXquJzKP79BmmXBCMwLmN5AbENhjpVS7xUPvW7upQPeN2uU8K',
+    createdAt:'2026-11-08T16:00:00.000Z', updatedAt:'2026-11-08T16:00:00.000Z', slot:'520065222', fee:'5000',
+  }] })));
+  await page.goto('/app');
+  await expect(page.getByRole('heading', { name:'Resolve the earlier payment' })).toBeVisible();
+  await page.getByRole('button', { name:'Recheck earlier payments' }).click();
+  await expect(page.getByText('Earlier payments reconciled.', { exact:false })).toBeVisible();
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('sendshield:v1')!).attempts[0]);
+  expect(stored.status).toBe('confirmed'); expect(stored.fee).toBe('5000');
+  await expect(page.getByRole('button', { name:'Review payment' })).toBeDisabled();
+});

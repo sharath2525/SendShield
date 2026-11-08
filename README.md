@@ -63,7 +63,9 @@ Open http://127.0.0.1:3000/app. Public endpoints work without credentials. Optio
 2. **Explain lookalikes:** open Safety guide and run the permanently labelled simulated comparison.
 3. **Prove key control:** connect a recipient wallet at `/prove`, sign the plain message, and share the proof through an independently trusted channel. A sender pastes the proof and the expected full address to verify it.
 4. **Request a payment:** create a Devnet request at `/request`. Open the link, load it for review, continue to Verify & send, load the request, and inspect. A label is unverified text, never identity evidence.
-5. **Make a genuine transfer:** connect a funded Devnet sender, use a second test wallet you control, inspect, review 0.001 SOL, and approve once. Compare the actual receipt with Explorer. For unknown outcomes, recheck the saved signature before considering another payment.
+5. **Make a genuine transfer:** connect a funded Devnet sender, use a second test wallet you control, inspect, review 0.001 SOL, and approve once. Compare the actual receipt with Explorer. If an earlier payment blocks sending, use **Recheck earlier payments** on the payment page or **Activity → Recheck receipts**. Saved confirmations require fresh RPC verification after reload. Never clear history to bypass an unresolved outcome.
+
+Creating a request does not automatically import it. Use **Open generated request**, or paste its full URL into the request-import field. A `127.0.0.1` link works only on the same computer; create links for other people on the public app.
 
 Get test SOL from [Solana's faucet](https://faucet.solana.com/). Never use a private key or seed phrase in SendShield.
 
