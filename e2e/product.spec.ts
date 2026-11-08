@@ -6,11 +6,9 @@ test('request round trip preserves manual inspection and review gates', async ({
   await page.getByRole('button', { name:'Create Devnet request link' }).click();
   const link = await page.getByLabel('Copy this shareable link').inputValue();
   await page.goto(link);
-  await page.getByRole('button', { name:'Load request for review' }).click();
-  await expect(page.getByRole('heading', { name:'Request parsed — verification required' })).toBeVisible();
+  await expect(page.getByRole('heading', { name:'Payment request loaded' })).toBeVisible();
   await page.getByRole('link', { name:'Continue to Verify & send' }).click();
   await expect(page.getByRole('heading', { name:'Verify first. Send with care.' })).toBeVisible();
-  await page.getByRole('button', { name:'Load request for review' }).click();
   await expect(page.getByLabel('Full Solana address')).toHaveValue(key);
   await expect(page.getByLabel('Amount in SOL')).toHaveValue('0.001');
   await expect(page.getByRole('button', { name:'Review payment' })).toBeDisabled();
@@ -32,13 +30,12 @@ test('proof page fails closed without wallet and rejects malformed proof', async
 
 test('empty request import gives an actionable instruction and generated link opens', async ({ page }) => {
   await page.goto('/request');
-  await page.getByRole('button', { name:'Load request for review' }).click();
+  await page.getByRole('button', { name:'Load pasted request' }).click();
   await expect(page.locator('main [role="alert"]')).toContainText('Paste the complete generated link first');
   await page.getByLabel('Full recipient wallet').fill(key);
   await page.getByRole('button', { name:'Create Devnet request link' }).click();
   await page.getByRole('link', { name:'Open generated request' }).click();
-  await page.getByRole('button', { name:'Load request for review' }).click();
-  await expect(page.getByRole('heading', { name:'Request parsed — verification required' })).toBeVisible();
+  await expect(page.getByRole('heading', { name:'Payment request loaded' })).toBeVisible();
 });
 
 // Only the browser's saved history is seeded. Settlement is read from REAL Devnet RPC;

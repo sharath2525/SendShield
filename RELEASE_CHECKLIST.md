@@ -44,6 +44,7 @@
 
 - Images 1–2: local key-control proof success recorded above.
 - Image 3: generated request existed, but importer was empty and the page URL contained no request. Added an explicit “Open generated request” link and clear empty-input guidance. Localhost links only work on the same computer; generate public links on the deployed site.
+- Follow-up cross-browser test: the complete public request URL appeared in the address bar, but the receiver page did not parse the fragment automatically. Fixed initial page loads and same-page hash changes: a valid link now immediately displays “Payment request loaded,” network, amount, recipient and the guarded continuation. No inspection, signing or payment is automatic. Desktop/mobile round-trip tests pass.
 - Image 4: unresolved-payment guard blocked a new send. Saved confirmations are intentionally downgraded on reload until RPC rechecks them; the screenshot alone does not identify which saved attempt blocked the wallet. Added “Recheck earlier payments” and Activity navigation directly on the payment page. No guard removal, forced success, resend or deletion.
 - PASS — live browser recovery test seeded only the saved history for the already verified public signature, then used real Devnet RPC to restore confirmation on desktop/mobile. It initiated no transaction.
 
