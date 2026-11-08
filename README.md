@@ -1,9 +1,7 @@
 # SendShield
 ### Verify the recipient. Lock the intent. Prove the payment.
 
-**Built for the MLH Solana Hackathon — November 6–8, 2026**
-
-**Prize category:** DeFi Track  
+**Built for the MLH Solana Hackathon 
 **Network:** Solana Devnet  
 **Status:** Hackathon prototype
 
