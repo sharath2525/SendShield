@@ -24,6 +24,7 @@ vi.mock('@/lib/solana/rpc', () => ({
   }),
 }));
 import { sendGuardedTransfer } from '@/lib/solana/send';
+import { computePolicyInstructions, COMPUTE_PROGRAM } from '@/lib/solana/compute-policy';
 
 const recipient = 'FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z';
 const inspection = classifyAccount({ address: recipient, network: 'devnet', onCurve: true, account: { owner: SYSTEM, space: 0, executable: false } });
@@ -70,8 +71,12 @@ describe('guarded transfer workflow with mocked network and ephemeral unit signe
     expect(message.version).toBe(0);
     if (message.version !== 0) throw new Error('Unit test expected v0 message');
     expect(message.staticAccounts[0]).toBe(draft.walletAddress);
-    expect(message.instructions).toHaveLength(1);
-    const instruction = message.instructions[0];
+    expect(message.instructions).toHaveLength(3);
+    for (const [i, expected] of computePolicyInstructions().entries()) {
+      expect(message.staticAccounts[message.instructions[i].programAddressIndex]).toBe(COMPUTE_PROGRAM);
+      expect(message.instructions[i].data).toEqual(expected.data);
+    }
+    const instruction = message.instructions[2];
     expect(message.staticAccounts[instruction.programAddressIndex]).toBe(SYSTEM);
     expect(instruction.accountIndices?.map(i => message.staticAccounts[i])).toEqual([draft.walletAddress, recipient]);
     expect(getTransferSolInstructionDataDecoder().decode(instruction.data!)).toMatchObject({ amount: 1000000n });
@@ -79,13 +84,13 @@ describe('guarded transfer workflow with mocked network and ephemeral unit signe
     expect(sign).toHaveBeenCalledTimes(1);
     expect(mock.broadcast).toHaveBeenCalledTimes(1);
     expect(mock.sendTransaction.mock.calls[0][1]).toMatchObject({ skipPreflight: false, maxRetries: 0n, preflightCommitment: 'confirmed' });
-    expect(updates.map(a => a.status)).toEqual(['awaiting_wallet', 'submitted', 'confirming', 'confirmed']);
+    expect(updates.map(a => a.status)).toEqual(['awaiting_wallet', 'confirming', 'submitted', 'confirming', 'confirmed']);
     expect(updates[1].transactionSignature).toBeTruthy();
   });
   it('stops on wallet rejection without broadcast or a success receipt', async () => {
     sign.mockRejectedValue(new Error('User rejected this unit test request'));
     const result = await sendGuardedTransfer(options());
-    expect(result.status).toBe('failed');
+    expect(result.status).toBe('unknown');
     expect(result.transactionSignature).toBeUndefined();
     expect(mock.broadcast).not.toHaveBeenCalled();
     expect(mock.recheck).not.toHaveBeenCalled();
@@ -93,14 +98,14 @@ describe('guarded transfer workflow with mocked network and ephemeral unit signe
   it('rejects wallet-modified message bytes before any broadcast', async () => {
     sign.mockImplementation(async transactions => transactions.map(tx => ({ ...tx, messageBytes: new Uint8Array([...tx.messageBytes, 0]) }) as unknown as Transaction & TransactionWithLifetime & TransactionWithinSizeLimit));
     const result = await sendGuardedTransfer(options());
-    expect(result.status).toBe('failed');
-    expect(result.message).toMatch(/changed the reviewed transaction/);
+    expect(result.status).toBe('unknown');
+    expect(result.message).toMatch(/SendShield will not retry/);
     expect(mock.broadcast).not.toHaveBeenCalled();
   });
   it('retains the deterministic signature and does not retry an ambiguous broadcast', async () => {
     mock.broadcast.mockRejectedValue(new Error('Unit test HTTP response lost'));
     const result = await sendGuardedTransfer(options());
-    expect(result).toMatchObject({ status: 'unknown', errorCode: 'SUBMISSION_UNCERTAIN' });
+    expect(result).toMatchObject({ status: 'unknown', errorCode: 'WALLET_OUTCOME_UNCERTAIN' });
     expect(result.transactionSignature).toBeTruthy();
     expect(updates.find(a => a.status === 'submitted')?.transactionSignature).toBe(result.transactionSignature);
     expect(mock.broadcast).toHaveBeenCalledTimes(1);
@@ -109,7 +114,7 @@ describe('guarded transfer workflow with mocked network and ephemeral unit signe
   it('blocks when recipient type changes between review and signing', async () => {
     mock.inspect.mockResolvedValueOnce(inspection).mockResolvedValueOnce(classifyAccount({ address: recipient, network: 'devnet', onCurve: true, account: { owner: TOKEN, parsedType: 'mint', executable: false, space: 82 } }));
     const result = await sendGuardedTransfer(options());
-    expect(result.status).toBe('failed');
+    expect(result.status).toBe('unknown');
     expect(mock.broadcast).not.toHaveBeenCalled();
   });
   it('blocks changed draft details before requesting the wallet', async () => {
@@ -120,7 +125,7 @@ describe('guarded transfer workflow with mocked network and ephemeral unit signe
   });
   it('blocks changed draft details while the wallet dialog was open', async () => {
     current.mockReturnValueOnce(true).mockReturnValueOnce(true).mockReturnValue(false);
-    expect((await sendGuardedTransfer(options())).status).toBe('failed');
+    expect((await sendGuardedTransfer(options())).status).toBe('unknown');
     expect(sign).toHaveBeenCalledTimes(1);
     expect(mock.broadcast).not.toHaveBeenCalled();
   });

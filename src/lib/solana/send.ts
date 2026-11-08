@@ -8,6 +8,8 @@ import { sendBlockReason } from '@/lib/security/decision';
 import { inspectRecipient } from './inspect';
 import { assertCluster, rpcFor, rpcOptions } from './rpc';
 import { recheckAttempt } from './receipt';
+import { assertReviewedMessage } from '@/lib/security/message-policy';
+import { computePolicyInstructions } from './compute-policy';
 export async function sendGuardedTransfer(options: {
   draft: TransferDraft; signer: WalletSigner; contacts: () => TrustedContact[]; attempts: () => TransferAttempt[];
   stillCurrent: () => boolean; onUpdate: (attempt: TransferAttempt) => void;
@@ -16,6 +18,8 @@ export async function sendGuardedTransfer(options: {
   let attempt: TransferAttempt = { ...draft, id: crypto.randomUUID(), status: 'draft', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   const update = (patch: Partial<TransferAttempt>) => { attempt = { ...attempt, ...patch, updatedAt: new Date().toISOString() }; onUpdate(attempt); };
   let signed = false;
+  let walletInvoked = false;
+  let messageMismatch = false;
   try {
     if (!isTransactionModifyingSigner(signer)) throw new Error('This wallet must support signing without broadcasting (solana:signTransaction).');
     if (draft.cluster !== 'devnet' || signer.address !== draft.walletAddress) throw new Error('Devnet signer does not match the reviewed sender.');
@@ -30,7 +34,8 @@ export async function sendGuardedTransfer(options: {
       rpc.getBalance(address(draft.walletAddress), { commitment: 'confirmed' }).send(rpcOptions()),
       rpc.getMinimumBalanceForRentExemption(0n).send(rpcOptions()),
     ]);
-    const message = pipe(createTransactionMessage({ version: 0 }), m => setTransactionMessageFeePayerSigner(signer, m), m => setTransactionMessageLifetimeUsingBlockhash(lifetime, m), m => appendTransactionMessageInstruction(getTransferSolInstruction({ source: signer, destination: address(draft.recipientAddress), amount }), m));
+    const [computeLimit, computePrice] = computePolicyInstructions();
+    const message = pipe(createTransactionMessage({ version: 0 }), m => setTransactionMessageFeePayerSigner(signer, m), m => setTransactionMessageLifetimeUsingBlockhash(lifetime, m), m => appendTransactionMessageInstruction(computeLimit, m), m => appendTransactionMessageInstruction(computePrice, m), m => appendTransactionMessageInstruction(getTransferSolInstruction({ source: signer, destination: address(draft.recipientAddress), amount }), m));
     const unsigned = compileTransaction(message);
     const { value: fee } = await rpc.getFeeForMessage(getBase64Decoder().decode(unsigned.messageBytes) as TransactionMessageBytesBase64, { commitment: 'confirmed' }).send(rpcOptions());
     if (fee === null) throw new Error('Could not estimate the fee. Recheck before signing.');
@@ -38,10 +43,15 @@ export async function sendGuardedTransfer(options: {
     if (!inspection.exists && amount < rent) throw new Error(`An unfunded recipient needs at least ${formatSol(rent)} SOL to remain rent-exempt.`);
     if (!options.stillCurrent()) throw new Error('Payment details changed. Review again.');
     update({ status: 'awaiting_wallet', lastValidBlockHeight: String(lifetime.lastValidBlockHeight), fee: String(fee), message: 'Approve the exact Devnet transfer in your wallet.' });
+    walletInvoked = true;
     const [transaction] = await signer.modifyAndSignTransactions([unsigned]);
-    if (!transaction || transaction.messageBytes.length !== unsigned.messageBytes.length || transaction.messageBytes.some((b, i) => b !== unsigned.messageBytes[i])) throw new Error('Wallet changed the reviewed transaction. Nothing was broadcast by SendShield.');
+    if (!transaction) throw new Error('Wallet returned no transaction. Check wallet history before retrying.');
     assertIsFullySignedTransaction(transaction);
-    if (!options.stillCurrent()) throw new Error('Payment details changed while the wallet was open. Nothing was broadcast.');
+    signed = true;
+    update({ transactionSignature: getSignatureFromTransaction(transaction), status: 'confirming', message: 'Wallet returned signed bytes. Checking reviewed intent before app broadcast.' });
+    try { assertReviewedMessage(unsigned, transaction); }
+    catch (error) { messageMismatch = true; throw error; }
+    if (!options.stillCurrent()) throw new Error('Payment details changed while the wallet was open. App broadcast stopped; check the recorded signature.');
     // Signing may have taken minutes. Recheck the chain and exact destination again before broadcast.
     await assertCluster('devnet');
     const finalInspection = await inspectRecipient(draft.recipientAddress, 'devnet');
@@ -61,7 +71,8 @@ export async function sendGuardedTransfer(options: {
     }
     update({ status: 'unknown', message: 'Confirmation is taking longer. Recheck Activity; do not repeat this payment.' });
   } catch (error) {
-    update({ status: signed ? 'unknown' : attempt.status === 'awaiting_wallet' ? 'failed' : 'blocked', errorCode: signed ? 'SUBMISSION_UNCERTAIN' : 'PRE_SUBMISSION_STOP', message: signed ? 'Submission outcome is uncertain. The signature was saved; check Activity before trying again.' : error instanceof Error ? error.message.slice(0, 700) : 'Wallet request stopped before broadcast.' });
+    const detail = error instanceof Error ? error.message.slice(0, 500) : 'Wallet response could not be verified.';
+    update({ status: walletInvoked ? 'unknown' : 'blocked', errorCode: messageMismatch ? 'WALLET_MESSAGE_MISMATCH' : walletInvoked ? 'WALLET_OUTCOME_UNCERTAIN' : 'PRE_SUBMISSION_STOP', message: walletInvoked ? `${detail} SendShield will not retry. ${signed ? 'Recheck the saved signature in Activity.' : 'Check wallet history; no signature was returned.'}` : detail });
   }
   return attempt;
 }

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { verifyTransactionEvidence } from '@/lib/solana/receipt';
 import { SYSTEM, TOKEN } from '@/lib/solana/classify';
 import type { TransferAttempt } from '@/types';
+import { getBase58Decoder } from '@solana/kit';
+import { computePolicyInstructions, COMPUTE_PROGRAM } from '@/lib/solana/compute-policy';
 
 // Synthetic parsed-transaction fixtures only. These signatures were not submitted.
 const sender = '4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi';
@@ -23,6 +25,17 @@ function transaction() {
 }
 
 describe('independent parsed-transaction receipt evidence', () => {
+  it('accepts exactly the predefined zero-priority compute policy followed by the transfer', () => {
+    const raw = transaction();
+    const instructions = [...computePolicyInstructions().map(ix => ({ programId: COMPUTE_PROGRAM, accounts: [], data: getBase58Decoder().decode(ix.data) })), ...raw.transaction.message.instructions];
+    expect(verifyTransactionEvidence({ ...raw, transaction: { ...raw.transaction, message: { ...raw.transaction.message, instructions } } }, attempt)).toEqual({ slot: '123456', fee: '5000' });
+  });
+  it('rejects a wallet-added nonzero priority price', () => {
+    const raw = transaction();
+    const policy = computePolicyInstructions().map(ix => ({ programId: COMPUTE_PROGRAM, accounts: [], data: getBase58Decoder().decode(ix.data) }));
+    policy[1].data = getBase58Decoder().decode(new Uint8Array([3,1,0,0,0,0,0,0,0]));
+    expect(() => verifyTransactionEvidence({ ...raw, transaction: { ...raw.transaction, message: { ...raw.transaction.message, instructions: [...policy, ...raw.transaction.message.instructions] } } }, attempt)).toThrow();
+  });
   it('verifies exact sender, recipient, lamports, fee, signature, and slot', () => {
     expect(verifyTransactionEvidence(transaction(), attempt)).toEqual({ slot: '123456', fee: '5000' });
   });
